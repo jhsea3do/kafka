@@ -1,0 +1,84 @@
+version: "2"
+services:
+  zk1:
+    container_name: stage_zk1
+    hostname: zk1
+    domainname: stage.dev.pi
+    image: zookeeper:latest
+    restart: always
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
+    volumes:
+      - ./vols/zk1-data:/data
+      - ./vols/zk1-logs:/datalog
+    networks:
+      default:
+        ipv4_address: 10.128.0.61
+  zk2:
+    container_name: stage_zk2
+    hostname: zk2
+    domainname: stage.dev.pi
+    image: zookeeper:latest
+    restart: always
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
+    volumes:
+      - ./vols/zk2-data:/data
+      - ./vols/zk2-logs:/datalog
+    networks:
+      default:
+        ipv4_address: 10.128.0.62
+  zk3:
+    container_name: stage_zk3
+    hostname: zk3
+    domainname: stage.dev.pi
+    image: zookeeper:latest
+    restart: always
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
+    volumes:
+      - ./vols/zk3-data:/data
+      - ./vols/zk3-logs:/datalog
+    networks:
+      default:
+        ipv4_address: 10.128.0.63
+  kafka:
+    container_name: stage_ka1
+    hostname: kafka
+    domainname: stage.dev.pi
+    image: kafka:2.10-0.10.0.0
+    environment:
+      - "KAFKA_BROKER_ID=1"
+      - "KAFKA_STORE_PATH=/kafka"
+      - "ZOOKEEPER=zk1,zk2,zk3"
+      - "ADVERTISED_HOST=kafka.stage.dev.pi"
+      - "ADVERTISED_PORT=9092"
+    volumes:
+      - ./vols/ka1-logs:/var/log/kafka
+    networks:
+      default:
+        ipv4_address: 10.128.0.71
+  monitor:
+    container_name: stage_ka2
+    hostname: kafka-monitor
+    domainname: stage.dev.pi
+    image: sheepkiller/kafka-manager
+    depends_on: 
+      - kafka
+    links:
+      - kafka:kafka.stage.dev.pi
+    environment:
+      - ZK_HOSTS=zk1,zk2,zk3
+      - APPLICATION_SECRET=letmein
+    networks:
+      default:
+        ipv4_address: 10.128.0.72
+
+
+networks:
+  default:
+    external:
+      name: net1
